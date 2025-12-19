@@ -3,7 +3,10 @@ require "bundler/setup"
 require "listen"
 require "json"
 require "fileutils"
-require "multipart-post"
+require "httparty"
+require "uri"
+require 'net/http'
+require 'net/http/post/multipart'
 
 # -----------------------------
 # Configuration
@@ -31,19 +34,21 @@ end
 def joplin_upload_resource(file_path)
   uri = URI("#{API}/resources?token=#{JOPLIN_TOKEN}")
 
-  File.open(file_path, "rb") do |file|
-    form = Multipart::Post::MultipartIO.new(
-      "data" => file
-    )
+  file = UploadIO.new(file_path, "application/octet-stream", File.basename(file_path))
 
-    request = Net::HTTP::Post.new(uri)
-    request["Content-Type"] = form.content_type
-    request.body_stream = form
-    request.content_length = form.length
+  props = {
+    title: File.basename(file_path)
+  }.to_json
 
-    Net::HTTP.start(uri.hostname, uri.port) do |http|
-      http.request(request)
-    end
+  form_data = {
+    "data"  => file,
+    "props" => props
+  }
+
+  request = Net::HTTP::Post::Multipart.new(uri.request_uri, form_data)
+
+  Net::HTTP.start(uri.host, uri.port) do |http|
+    http.request(request)
   end
 end
 
