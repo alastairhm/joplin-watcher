@@ -3,4 +3,5 @@
 source "https://rubygems.org"
 
 gem "listen"
-gem "httparty"
+gem "logger"
+gem "multipart-post"
